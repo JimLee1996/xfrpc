@@ -24,6 +24,7 @@
     @author Copyright (C) 2016 Dengfeng Liu <liu_df@qq.com>
 */
 
+#include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 #include <json-c/json.h>
@@ -188,7 +189,22 @@ new_proxy_service_marshal(const struct proxy_service *np_req, char **msg)
 	}
 
 	if (np_req->custom_domains) {
-		fill_custom_domains(j_np_req, np_req->custom_domains);
+		if (np_req->custom_domains[0] == '*') {
+			int i = 0;
+			char buf[256];
+			char *run_id = get_run_id();
+			char *custom_domains = np_req->custom_domains;
+			for(i = 0; run_id[i] != '\0'; i++) {
+				buf[i] = tolower(run_id[i]);
+			}
+			for(int j = 1; custom_domains[j] != '\0'; i++, j++) {
+				buf[i] = custom_domains[j];
+			}
+			buf[i] = '\0';
+			fill_custom_domains(j_np_req, buf);
+		} else {
+			fill_custom_domains(j_np_req, np_req->custom_domains);
+		}
 		json_object_object_add(j_np_req, "remote_port", NULL);
 	} else {
 		json_object_object_add(j_np_req, "custom_domains", NULL);
